@@ -1,0 +1,44 @@
+replicaCount: 1
+
+image:
+  repository: expense-tracker-frontend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+# - name: ecr-creds
+
+service:
+  type: ClusterIP
+  port: 8501
+
+ingress:
+  enabled: false
+  className: nginx
+  host: expense-tracker.local
+  path: /
+  pathType: Prefix
+  annotations: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+# Extra environment variables for the frontend container (e.g. BACKEND_URL).
+env: {}
+
+probes:
+  path: /_stcore/health
+  port: 8501
+
+serviceAccount:
+  create: true
+  name: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: db
+description: Postgres database for the Expense Tracker (wraps the Bitnami postgresql chart)
+type: application
+version: 0.1.0
+appVersion: "16"
+
+dependencies:
+  - name: postgresql
+    # Any 16.x release of the Bitnami chart (Postgres 16 image).
+    version: ">=16.0.0 <17.0.0"
+    repository: "https://charts.bitnami.com/bitnami"

@@ -1,0 +1,6 @@
+Postgres is available within the cluster at:
+
+  {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local:5432
+
+Database: {{ .Values.postgresql.auth.database }}
+Username: {{ .Values.postgresql.auth.username }}

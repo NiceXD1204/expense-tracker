@@ -1,0 +1,85 @@
+name: Deploy to staging (dev)
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_BACKEND: ${{ vars.ECR_BACKEND_REPO }}
+  ECR_FRONTEND: ${{ vars.ECR_FRONTEND_REPO }}
+
+jobs:
+  ci:
+    uses: ./.github/workflows/_reusable-ci.yml
+
+  deploy:
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr-login
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_BACKEND }}:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          push: true
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_FRONTEND }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_FRONTEND }}:latest
+
+      - name: Checkout infra (GitOps) repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/expense-tracker-infra
+          token: ${{ secrets.INFRA_REPO_TOKEN }}
+          path: infra
+
+      - name: Update image tags for ArgoCD
+        working-directory: infra
+        run: |
+          sed -i "s|^  tag: .*|  tag: ${{ github.sha }}|" gitops/dev/values-backend.yaml
+          sed -i "s|^  tag: .*|  tag: ${{ github.sha }}|" gitops/dev/values-frontend.yaml
+
+      - name: Commit and push
+        working-directory: infra
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gitops/dev/values-backend.yaml gitops/dev/values-frontend.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "deploy(dev): expense-tracker@${{ github.sha }}"
+          git push
+
+  notify-on-failure:
+    needs: [ci, deploy]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "Staging deploy failed for ${{ github.repository }}@${{ github.sha }}: ${{ github.event.head_commit.url }}"

@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  ci:
+    uses: ./.github/workflows/_reusable-ci.yml
+
+  notify-on-failure:
+    needs: [ci]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "CI failed for PR #${{ github.event.number }} in ${{ github.repository }}: ${{ github.event.pull_request.html_url }}"

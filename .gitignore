@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local test/dev databases
+*.db
+
+# Pytest / tooling caches
+.pytest_cache/
+.ruff_cache/
+
+# Terraform (for later phases)
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# Never commit credentials
+*accessKeys*.csv
+*.pem
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store

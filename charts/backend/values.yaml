@@ -1,0 +1,57 @@
+replicaCount: 1
+
+image:
+  repository: expense-tracker-backend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Name of an existing imagePullSecret (kubectl create secret docker-registry ...)
+# used to pull the image from a private ECR repo. Empty disables it.
+imagePullSecrets: []
+# - name: ecr-creds
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false
+  className: nginx
+  host: api.expense-tracker.local
+  path: /
+  pathType: Prefix
+  annotations: {}
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+# Extra environment variables for the backend container (e.g. DATABASE_URL).
+env: {}
+
+# Prometheus ServiceMonitor (requires the Prometheus Operator CRDs, e.g. from kube-prometheus-stack).
+metrics:
+  enabled: false
+  path: /metrics
+  interval: 30s
+
+probes:
+  path: /healthz
+  port: 8000
+
+# One-off Helm hook Job that creates tables and seeds sample expense data
+# before the Deployment is rolled out.
+seedJob:
+  enabled: true
+
+serviceAccount:
+  create: true
+  name: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

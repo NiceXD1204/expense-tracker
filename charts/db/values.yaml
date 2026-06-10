@@ -1,0 +1,22 @@
+# All settings are passed through to the Bitnami postgresql subchart under this key.
+# See https://github.com/bitnami/charts/tree/main/bitnami/postgresql for the full reference.
+postgresql:
+  auth:
+    username: expenses
+    password: expenses
+    database: expenses
+
+  architecture: standalone
+
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
